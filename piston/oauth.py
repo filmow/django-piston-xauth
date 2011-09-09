@@ -490,7 +490,7 @@ class OAuthServer(object):
             raise OAuthError('xAuth not allowed for this consumer.')
         return consumer
 
-    def _get_token(self, oauth_request, token_type='access', is_xauth=True):
+    def _get_token(self, oauth_request, token_type='access', is_xauth=False):
         """Try to find the token for the provided request token key."""
         if not is_xauth:
             token_field = oauth_request.get_parameter('oauth_token')
