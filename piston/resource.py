@@ -13,8 +13,10 @@ from emitters import Emitter
 from handler import typemapper
 from doc import HandlerMethod
 from authentication import NoAuthentication
-from utils import coerce_put_post, FormValidationError, HttpStatusCode
-from utils import rc, format_error, translate_mime, MimerDataException
+from utils import coerce_put_post, FormValidationError, HttpStatusCode, \
+                  rc, format_error, translate_mime, MimerDataException, \
+                  head_guard
+
 
 CHALLENGE = object()
 
@@ -27,7 +29,8 @@ class Resource(object):
     `NoAuthentication` will be used by default.
     """
     callmap = { 'GET': 'read', 'POST': 'create',
-                'PUT': 'update', 'DELETE': 'delete' }
+                'PUT': 'update', 'DELETE': 'delete',
+                'HEAD': 'meta' }
 
     def __init__(self, handler, authentication=None):
         if not callable(handler):
@@ -111,6 +114,7 @@ class Resource(object):
 
         return actor, anonymous
 
+    @head_guard
     @vary_on_headers('Authorization')
     def __call__(self, request, *args, **kwargs):
         """

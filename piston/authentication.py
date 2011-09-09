@@ -11,6 +11,7 @@ from django.core.urlresolvers import get_callable
 from django.core.exceptions import ImproperlyConfigured
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.views.decorators.csrf import csrf_exempt
 
 from piston import forms
 
@@ -150,6 +151,7 @@ def send_oauth_error(err=None):
 
     return response
 
+@csrf_exempt
 def oauth_request_token(request):
     oauth_server, oauth_request = initialize_server_request(request)
     
@@ -221,6 +223,7 @@ def oauth_user_auth(request):
             
     return response
 
+@csrf_exempt
 def oauth_access_token(request):
     oauth_server, oauth_request = initialize_server_request(request)
     

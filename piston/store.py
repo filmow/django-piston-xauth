@@ -3,6 +3,8 @@ import oauth
 from models import Nonce, Token, Consumer
 from models import generate_random, VERIFIER_SIZE
 
+from django.contrib.auth import login, authenticate
+
 class DataStore(oauth.OAuthDataStore):
     """Layer between Python OAuth and Django database."""
     def __init__(self, oauth_request):
@@ -16,6 +18,11 @@ class DataStore(oauth.OAuthDataStore):
             return self.consumer
         except Consumer.DoesNotExist:
             return None
+
+    def lookup_user(self, username, password):
+        user = authenticate(username=username, password=password)
+        if user and user.is_active:
+            return user
 
     def lookup_token(self, token_type, token):
         if token_type == 'request':

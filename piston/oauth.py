@@ -37,6 +37,13 @@ SIGNATURE_METHOD = 'PLAINTEXT'
 
 
 class OAuthError(RuntimeError):
+    def _get_message(self):
+        return self._message
+
+    def _set_message(self, message):
+        self._message = message
+    message = property(_get_message, _set_message)
+   
     """Generic exception class."""
     def __init__(self, message='OAuth error occured.'):
         self.message = message
@@ -78,6 +85,7 @@ class OAuthConsumer(object):
     """
     key = None
     secret = None
+    xauth_allowed = False
 
     def __init__(self, key, secret):
         self.key = key
@@ -364,6 +372,9 @@ class OAuthRequest(object):
         return parameters
     _split_url_string = staticmethod(_split_url_string)
 
+    def is_xauth(self):
+        return 'x_auth_password' in self.parameters and 'x_auth_username' in self.parameters
+
 class OAuthServer(object):
     """A worker to check the validity of a request against a data store."""
     timestamp_threshold = 300 # In seconds, five minutes.
@@ -389,6 +400,8 @@ class OAuthServer(object):
         """Processes a request_token request and returns the
         request token on success.
         """
+        if oauth_request.is_xauth():
+            raise OAuthError("xAuth not allowed for this method")
         try:
             # Get the request token for authorization.
             token = self._get_token(oauth_request, 'request')
@@ -424,7 +437,7 @@ class OAuthServer(object):
         version = self._get_version(oauth_request)
         consumer = self._get_consumer(oauth_request)
         # Get the access token.
-        token = self._get_token(oauth_request, 'access')
+        token = self._get_token(oauth_request, 'access', oauth_request.is_xauth())
         self._check_signature(oauth_request, consumer, token)
         parameters = oauth_request.get_nonoauth_parameters()
         return consumer, token, parameters
@@ -473,17 +486,31 @@ class OAuthServer(object):
         consumer = self.data_store.lookup_consumer(consumer_key)
         if not consumer:
             raise OAuthError('Invalid consumer.')
+        if oauth_request.is_xauth() and not consumer.xauth_allowed:
+            raise OAuthError('xAuth not allowed for this consumer.')
         return consumer
 
-    def _get_token(self, oauth_request, token_type='access'):
+    def _get_token(self, oauth_request, token_type='access', is_xauth=True):
         """Try to find the token for the provided request token key."""
-        token_field = oauth_request.get_parameter('oauth_token')
-        token = self.data_store.lookup_token(token_type, token_field)
+        if not is_xauth:
+            token_field = oauth_request.get_parameter('oauth_token')
+            token = self.data_store.lookup_token(token_type, token_field)
+        else:
+            try:
+                token = self._get_token(oauth_request, 'request')
+            except OAuthError:
+                consumer = self._get_consumer(oauth_request)
+                token = self.data_store.fetch_request_token(consumer, None)
+            user = self._check_xauth(oauth_request)
+            token = self.authorize_token(token, user)
+            token.secret = ''
+            token.verifier = ''
         if not token:
             raise OAuthError('Invalid %s token: %s' % (token_type, token_field))
         return token
     
     def _get_verifier(self, oauth_request):
+        if oauth_request.is_xauth(): return ''
         return oauth_request.get_parameter('oauth_verifier')
 
     def _check_signature(self, oauth_request, consumer, token):
@@ -521,6 +548,15 @@ class OAuthServer(object):
         if nonce:
             raise OAuthError('Nonce already used: %s' % str(nonce))
 
+    def _check_xauth(self, oauth_request):
+        x_auth_username = oauth_request.get_parameter('x_auth_username')
+        x_auth_password = oauth_request.get_parameter('x_auth_password')
+
+        user = self.data_store.lookup_user(x_auth_username, x_auth_password)
+
+        if not user:
+            raise OAuthError('xAuth username or password is not valid')
+        return user
 
 class OAuthClient(object):
     """OAuthClient is a worker to attempt to execute a request."""
@@ -554,6 +590,10 @@ class OAuthDataStore(object):
     """A database abstraction used to lookup consumers and tokens."""
 
     def lookup_consumer(self, key):
+        """-> OAuthConsumer."""
+        raise NotImplementedError
+
+    def lookup_user(self, username, password):
         """-> OAuthConsumer."""
         raise NotImplementedError
 

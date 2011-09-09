@@ -5,6 +5,7 @@ from django.db.models.signals import post_save, post_delete
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.mail import send_mail, mail_admins
+from functools import partial
 
 # Piston imports
 from managers import TokenManager, ConsumerManager, ResourceManager
@@ -25,7 +26,7 @@ def generate_random(length=SECRET_SIZE):
     return User.objects.make_random_password(length=length)
 
 class Nonce(models.Model):
-    token_key = models.CharField(max_length=KEY_SIZE)
+    token_key = models.CharField(max_length=KEY_SIZE, db_index=True)
     consumer_key = models.CharField(max_length=KEY_SIZE)
     key = models.CharField(max_length=255)
     
@@ -38,10 +39,11 @@ class Consumer(models.Model):
     description = models.TextField()
 
     key = models.CharField(max_length=KEY_SIZE)
-    secret = models.CharField(max_length=SECRET_SIZE)
+    secret = models.CharField(max_length=SECRET_SIZE, default=partial(User.objects.make_random_password, SECRET_SIZE))
 
     status = models.CharField(max_length=16, choices=CONSUMER_STATES, default='pending')
     user = models.ForeignKey(User, null=True, blank=True, related_name='consumers')
+    xauth_allowed = models.BooleanField("Allow xAuth", default=False)
 
     objects = ConsumerManager()
         
