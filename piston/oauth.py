@@ -404,7 +404,7 @@ class OAuthServer(object):
             raise OAuthError("xAuth not allowed for this method")
         try:
             # Get the request token for authorization.
-            token = self._get_token(oauth_request, 'request')
+            token = self._get_token(oauth_request, 'request', oauth_request.is_xauth())
         except OAuthError:
             # No token required for the initial token request.
             version = self._get_version(oauth_request)
@@ -426,7 +426,7 @@ class OAuthServer(object):
         consumer = self._get_consumer(oauth_request)
         verifier = self._get_verifier(oauth_request)
         # Get the request token.
-        token = self._get_token(oauth_request, 'request')
+        token = self._get_token(oauth_request, 'request', oauth_request.is_xauth())
         self._check_signature(oauth_request, consumer, token)
         new_token = self.data_store.fetch_access_token(consumer, token, verifier)
         return new_token
