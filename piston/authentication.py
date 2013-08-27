@@ -112,7 +112,7 @@ def initialize_server_request(request):
     """
     Shortcut for initialization.
     """
-    if request.method == "POST": #and \
+    if request.method in ["POST", "PUT", "DELETE"]: #and \
 #       request.META['CONTENT_TYPE'] == "application/x-www-form-urlencoded":
         params = dict(request.REQUEST.items())
     else:
