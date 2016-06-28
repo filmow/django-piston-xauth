@@ -44,7 +44,7 @@ class Consumer(models.Model):
     description = models.TextField()
 
     key = models.CharField(max_length=KEY_SIZE)
-    secret = models.CharField(max_length=SECRET_SIZE, default=partial(get_user_model().objects.make_random_password, SECRET_SIZE))
+    secret = models.CharField(max_length=SECRET_SIZE, default="initial")
 
     status = models.CharField(max_length=16, choices=CONSUMER_STATES, default='pending')
     user = models.ForeignKey(AUTH_USER_MODEL,
@@ -55,6 +55,14 @@ class Consumer(models.Model):
 
     def __unicode__(self):
         return u"Consumer %s with key %s" % (self.name, self.key)
+
+    def save(self, *args, **kwargs):
+        super(Consumer, self).save(*args, **kwargs)
+
+        # Overwrite initial password
+        if self.secret == "initial":
+            self.generate_random_codes()
+        super(Consumer, self).save(*args, **kwargs)
 
     def generate_random_codes(self):
         """
