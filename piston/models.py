@@ -44,7 +44,7 @@ class Consumer(models.Model):
     description = models.TextField()
 
     key = models.CharField(max_length=KEY_SIZE)
-    secret = models.CharField(max_length=SECRET_SIZE, default="initial")
+    secret = models.CharField(max_length=SECRET_SIZE, default="initial-secret")
 
     status = models.CharField(max_length=16, choices=CONSUMER_STATES, default='pending')
     user = models.ForeignKey(AUTH_USER_MODEL,
@@ -60,7 +60,7 @@ class Consumer(models.Model):
         super(Consumer, self).save(*args, **kwargs)
 
         # Overwrite initial password
-        if self.secret == "initial":
+        if not self.secret or self.secret == "initial-secret":
             self.generate_random_codes()
         super(Consumer, self).save(*args, **kwargs)
 
