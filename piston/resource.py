@@ -88,7 +88,7 @@ class Resource(object):
 
     def form_validation_response(self, e):
         """
-        Method to return form validation error information. 
+        Method to return form validation error information.
         You will probably want to override this in your own
         `Resource` subclass.
         """
@@ -207,7 +207,7 @@ class Resource(object):
         status_code = 200
 
         # If we're looking at a response object which contains non-string
-        # content, then assume we should use the emitter to format that 
+        # content, then assume we should use the emitter to format that
         # content
         if self._use_emitter(result):
             status_code = result.status_code
@@ -230,8 +230,11 @@ class Resource(object):
             if self.stream: stream = srl.stream_render(request)
             else: stream = srl.render(request)
 
+            print "---debug--2"
+            print ct
+            print "---debug--3"
             if not isinstance(stream, HttpResponse):
-                resp = HttpResponse(stream, mimetype=ct, status=status_code)
+                resp = HttpResponse(stream, content_type=ct, status=status_code)
             else:
                 resp = stream
 
@@ -247,7 +250,7 @@ class Resource(object):
         if not isinstance(result, HttpResponse):
             return False
         elif django.VERSION >= (1, 4):
-            return result._base_content_is_iter
+            return hasattr(result, '__iter__')
         else:
             return not result._is_string
 
@@ -287,7 +290,7 @@ class Resource(object):
 
     def error_handler(self, e, request, meth, em_format):
         """
-        Override this method to add handling of errors customized for your 
+        Override this method to add handling of errors customized for your
         needs
         """
         if isinstance(e, FormValidationError):
@@ -315,8 +318,8 @@ class Resource(object):
 
         elif isinstance(e, HttpStatusCode):
             return e.response
- 
-        else: 
+
+        else:
             """
             On errors (like code errors), we'd like to be able to
             give crash reports to both admins and also the calling
