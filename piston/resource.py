@@ -230,9 +230,6 @@ class Resource(object):
             if self.stream: stream = srl.stream_render(request)
             else: stream = srl.render(request)
 
-            print "---debug--2"
-            print ct
-            print "---debug--3"
             if not isinstance(stream, HttpResponse):
                 resp = HttpResponse(stream, content_type=ct, status=status_code)
             else:
