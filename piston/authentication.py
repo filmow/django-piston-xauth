@@ -115,9 +115,8 @@ def initialize_server_request(request):
 
     params = {}
 
-    if request.method in ["POST", "PUT", "DELETE"]:
-        # request_params = request.POST # or request.PUT or request.DELETE
-        request_params = getattr(request, request.method)
+    if request.method in ["POST"]:
+        request_params = request.POST # or request.PUT or request.DELETE
         params = dict(request_params.items())
 
     # Seems that we want to put HTTP_AUTHORIZATION into 'Authorization'
