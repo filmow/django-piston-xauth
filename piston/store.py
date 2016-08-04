@@ -1,7 +1,7 @@
-import oauth
+from . import oauth
 
-from models import Nonce, Token, Consumer
-from models import generate_random, VERIFIER_SIZE
+from .models import Nonce, Token, Consumer
+from .models import generate_random, VERIFIER_SIZE
 
 from django.contrib.auth import login, authenticate
 

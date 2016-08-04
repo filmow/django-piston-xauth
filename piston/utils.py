@@ -10,7 +10,7 @@ from django.conf import settings
 from django.utils.translation import ugettext as _
 from django.template import loader, TemplateDoesNotExist
 from django.contrib.sites.models import Site
-from decorator import decorator
+from .decorator import decorator
 
 __version__ = '0.2.4'
 
@@ -21,7 +21,7 @@ def get_version():
 # We never want to display debug information to the user about an error, but we DO want to catch and display a JSON structure when an error occurs.
 # So we override this method to return a generic 500.
 def format_error(error):
-    return u"Piston/%s (Django %s) crash report:\n\n%s" % \
+    return "Piston/%s (Django %s) crash report:\n\n%s" % \
         (get_version(), django_version(), error)
     json_response = dict({
         "error": True,
@@ -81,7 +81,7 @@ class rc_factory(object):
                     http://code.djangoproject.com/ticket/9403
                     """
                     is_string = False
-                    if not isinstance(content, basestring) and hasattr(content, '__iter__'):
+                    if not isinstance(content, str) and hasattr(content, '__iter__'):
                         self._container = content
                     else:
                         self._container = [content]
@@ -237,7 +237,7 @@ class Mimer(object):
         Gets a function ref to deserialize content
         for a certain mimetype.
         """
-        for loadee, mimes in Mimer.TYPES.iteritems():
+        for loadee, mimes in Mimer.TYPES.items():
             for mime in mimes:
                 if ctype.startswith(mime):
                     return loadee
@@ -369,9 +369,9 @@ def send_consumer_mail(consumer):
         mail_admins(_(subject), body, fail_silently=True)
 
     if settings.DEBUG and consumer.user:
-        print "Mail being sent, to=%s" % consumer.user.email
-        print "Subject: %s" % _(subject)
-        print body
+        print("Mail being sent, to=%s" % consumer.user.email)
+        print("Subject: %s" % _(subject))
+        print(body)
 
 
 def head_guard(f):

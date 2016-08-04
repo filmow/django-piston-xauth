@@ -1,6 +1,6 @@
 import binascii
 
-import oauth
+from . import oauth
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.auth.decorators import login_required
@@ -71,7 +71,7 @@ class HttpBasicAuthentication(object):
         return resp
 
     def __repr__(self):
-        return u'<HTTPBasic: realm=%s>' % self.realm
+        return '<HTTPBasic: realm=%s>' % self.realm
 
 class HttpBasicSimple(HttpBasicAuthentication):
     def __init__(self, realm, username, password):
@@ -95,13 +95,13 @@ def load_data_store():
 
     try:
         mod = __import__(module, {}, {}, attr)
-    except ImportError, e:
-        raise ImproperlyConfigured, 'Error importing OAuth data store %s: "%s"' % (module, e)
+    except ImportError as e:
+        raise ImproperlyConfigured('Error importing OAuth data store %s: "%s"' % (module, e))
 
     try:
         cls = getattr(mod, attr)
     except AttributeError:
-        raise ImproperlyConfigured, 'Module %s does not define a "%s" OAuth data store' % (module, attr)
+        raise ImproperlyConfigured('Module %s does not define a "%s" OAuth data store' % (module, attr))
 
     return cls
 
@@ -117,7 +117,7 @@ def initialize_server_request(request):
 
     if request.method in ["POST", "PUT", "DELETE"]:
         request_params = request.POST # or request.PUT or request.DELETE
-        params = dict(request_params.items())
+        params = dict(list(request_params.items()))
 
     # Seems that we want to put HTTP_AUTHORIZATION into 'Authorization'
     # for oauth.py to understand. Lovely.
@@ -147,7 +147,7 @@ def send_oauth_error(err=None):
     realm = 'OAuth'
     header = oauth.build_authenticate_header(realm=realm)
 
-    for k, v in header.iteritems():
+    for k, v in header.items():
         response[k] = v
 
     return response
@@ -162,7 +162,7 @@ def oauth_request_token(request):
         token = oauth_server.fetch_request_token(oauth_request)
 
         response = HttpResponse(token.to_string())
-    except oauth.OAuthError, err:
+    except oauth.OAuthError as err:
         response = send_oauth_error(err)
 
     return response
@@ -185,7 +185,7 @@ def oauth_user_auth(request):
 
     try:
         token = oauth_server.fetch_request_token(oauth_request)
-    except oauth.OAuthError, err:
+    except oauth.OAuthError as err:
         return send_oauth_error(err)
 
     try:
@@ -209,7 +209,7 @@ def oauth_user_auth(request):
                 args = '?'+token.to_string(only_key=True)
             else:
                 args = '?error=%s' % 'Access not granted by user.'
-                print "FORM ERROR", form.errors
+                print("FORM ERROR", form.errors)
 
             if not callback:
                 callback = getattr(settings, 'OAUTH_CALLBACK_VIEW')
@@ -217,7 +217,7 @@ def oauth_user_auth(request):
 
             response = HttpResponseRedirect(callback+args)
 
-        except oauth.OAuthError, err:
+        except oauth.OAuthError as err:
             response = send_oauth_error(err)
     else:
         response = HttpResponse('Action not allowed.')
@@ -234,7 +234,7 @@ def oauth_access_token(request):
     try:
         token = oauth_server.fetch_access_token(oauth_request)
         return HttpResponse(token.to_string())
-    except oauth.OAuthError, err:
+    except oauth.OAuthError as err:
         return send_oauth_error(err)
 
 INVALID_PARAMS_RESPONSE = send_oauth_error(oauth.OAuthError('Invalid request parameters.'))
@@ -258,8 +258,8 @@ class OAuthAuthentication(object):
         if self.is_valid_request(request):
             try:
                 consumer, token, parameters = self.validate_token(request)
-            except oauth.OAuthError, err:
-                print send_oauth_error(err)
+            except oauth.OAuthError as err:
+                print(send_oauth_error(err))
                 return False
 
             if consumer and token:
@@ -285,7 +285,7 @@ class OAuthAuthentication(object):
         response.status_code = 401
         realm = 'API'
 
-        for k, v in self.builder(realm=realm).iteritems():
+        for k, v in self.builder(realm=realm).items():
             response[k] = v
 
         tmpl = loader.render_to_string('oauth/challenge.html',

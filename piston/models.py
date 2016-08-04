@@ -1,4 +1,4 @@
-import urllib, time, urlparse
+import urllib.request, urllib.parse, urllib.error, time, urllib.parse
 
 # Django imports
 from django.conf import settings
@@ -9,8 +9,8 @@ from django.core.mail import send_mail, mail_admins
 from functools import partial
 
 # Piston imports
-from managers import TokenManager, ConsumerManager, ResourceManager
-from signals import consumer_post_save, consumer_post_delete
+from .managers import TokenManager, ConsumerManager, ResourceManager
+from .signals import consumer_post_save, consumer_post_delete
 
 KEY_SIZE = 18
 SECRET_SIZE = 32
@@ -36,7 +36,7 @@ class Nonce(models.Model):
     key = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return u"Nonce %s for %s" % (self.key, self.consumer_key)
+        return "Nonce %s for %s" % (self.key, self.consumer_key)
 
 
 class Consumer(models.Model):
@@ -54,7 +54,7 @@ class Consumer(models.Model):
     objects = ConsumerManager()
 
     def __unicode__(self):
-        return u"Consumer %s with key %s" % (self.name, self.key)
+        return "Consumer %s with key %s" % (self.name, self.key)
 
     def save(self, *args, **kwargs):
         super(Consumer, self).save(*args, **kwargs)
@@ -89,13 +89,13 @@ class Consumer(models.Model):
 class Token(models.Model):
     REQUEST = 1
     ACCESS = 2
-    TOKEN_TYPES = ((REQUEST, u'Request'), (ACCESS, u'Access'))
+    TOKEN_TYPES = ((REQUEST, 'Request'), (ACCESS, 'Access'))
 
     key = models.CharField(max_length=KEY_SIZE)
     secret = models.CharField(max_length=SECRET_SIZE)
     verifier = models.CharField(max_length=VERIFIER_SIZE)
     token_type = models.IntegerField(choices=TOKEN_TYPES)
-    timestamp = models.IntegerField(default=long(time.time()))
+    timestamp = models.IntegerField(default=int(time.time()))
     is_approved = models.BooleanField(default=False)
 
     user = models.ForeignKey(AUTH_USER_MODEL,
@@ -108,7 +108,7 @@ class Token(models.Model):
     objects = TokenManager()
 
     def __unicode__(self):
-        return u"%s Token %s for %s" % (self.get_token_type_display(), self.key, self.consumer)
+        return "%s Token %s for %s" % (self.get_token_type_display(), self.key, self.consumer)
 
     def to_string(self, only_key=False):
         token_dict = {
@@ -123,7 +123,7 @@ class Token(models.Model):
         if only_key:
             del token_dict['oauth_token_secret']
 
-        return urllib.urlencode(token_dict)
+        return urllib.parse.urlencode(token_dict)
 
     def generate_random_codes(self):
         key = get_user_model().objects.make_random_password(length=KEY_SIZE)
@@ -141,13 +141,13 @@ class Token(models.Model):
     def get_callback_url(self):
         if self.callback and self.verifier:
             # Append the oauth_verifier.
-            parts = urlparse.urlparse(self.callback)
+            parts = urllib.parse.urlparse(self.callback)
             scheme, netloc, path, params, query, fragment = parts[:6]
             if query:
                 query = '%s&oauth_verifier=%s' % (query, self.verifier)
             else:
                 query = 'oauth_verifier=%s' % self.verifier
-            return urlparse.urlunparse((scheme, netloc, path, params,
+            return urllib.parse.urlunparse((scheme, netloc, path, params,
                 query, fragment))
         return self.callback
 
