@@ -32,7 +32,7 @@ class DataStore(oauth.OAuthDataStore):
         elif token_type == 'access':
             token_type = Token.ACCESS
         try:
-            self.request_token = Token.objects.get(key=token, 
+            self.request_token = Token.objects.get(key=token,
                                                    token_type=token_type)
             return self.request_token
         except Token.DoesNotExist:
@@ -41,23 +41,30 @@ class DataStore(oauth.OAuthDataStore):
     def lookup_nonce(self, oauth_consumer, oauth_token, nonce):
         if oauth_token is None:
             return None
-        nonce, created = Nonce.objects.get_or_create(consumer_key=oauth_consumer.key, 
-                                                     token_key=oauth_token.key,
-                                                     key=nonce)
-        if created:
-            return None
-        else:
+
+        try:
+            nonce = Nonce.objects.filter(
+                consumer_key=oauth_consumer.key, token_key=oauth_token.key,
+                key=nonce)[:1].get()
             return nonce.key
+
+        except Nonce.DoesNotExist:
+            nonce = Nonce.objects.create(
+                consumer_key=oauth_consumer.key, token_key=oauth_token.key,
+                key=nonce)
+            return None  # Created
+
+        return None
 
     def fetch_request_token(self, oauth_consumer, oauth_callback):
         if oauth_consumer.key == self.consumer.key:
             self.request_token = Token.objects.create_token(consumer=self.consumer,
                                                             token_type=Token.REQUEST,
                                                             timestamp=self.timestamp)
-            
+
             if oauth_callback:
                 self.request_token.set_callback(oauth_callback)
-            
+
             return self.request_token
         return None
 

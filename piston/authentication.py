@@ -115,7 +115,7 @@ def initialize_server_request(request):
 
     params = {}
 
-    if request.method in ["POST", "PUT", "DELETE"]:
+    if request.method in ["POST"]:
         request_params = request.POST # or request.PUT or request.DELETE
         params = dict(list(request_params.items()))
 
